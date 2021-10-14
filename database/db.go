@@ -4,47 +4,92 @@ import (
 	"basic-blockchain/handel"
 	"fmt"
 	"github.com/boltdb/bolt"
+	"log"
+	"os"
 )
 
 const dbFile = "my.db"
 
-func NewBlockChain() *handel.BlockChain {
-	var tip []byte
+func dbExists() bool {
+	if _, err := os.Stat(dbFile); os.IsNotExist(err) {
+		return false
+	}
 
+	return true
+}
+
+// 创建一个指向最新block的链接
+func NewBlockchainLink() *handel.BlockChain {
+	if dbExists() == false {
+		fmt.Println("No existing blockchain found. Create one first.")
+		os.Exit(1)
+	}
+	var tip []byte
 	db, err := bolt.Open(dbFile, 0600, nil)
 	if err != nil {
-		fmt.Println("Error when open database err :", err)
+		log.Panic(err)
 	}
-	defer db.Close()
 
 	err = db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("blocksBucket"))
-		//若db中不存在
-		if b == nil {
-			genesis := handel.NewGenesisBlock()
+		tip = b.Get([]byte("l"))
 
-			b, err := tx.CreateBucket([]byte("blockBucket"))
-			if err != nil {
-				fmt.Println("Error when create blockBucket err :", err)
-			}
+		return nil
+	})
+	if err != nil {
+		log.Panic(err)
+	}
 
-			err = b.Put(genesis.Hash, genesis.Serialize())
-			if err != nil {
-				fmt.Println("Error when put genesis err :", err)
-			}
+	bc := handel.BlockChain{
+		Tip: tip,
+		Db:  db,
+	}
 
-			err = b.Put([]byte("l"), genesis.Hash)
-			if err != nil {
-				fmt.Println("", err)
-			}
+	return &bc
+}
 
-			tip = genesis.Hash
-		} else {
-			tip = b.Get([]byte("l"))
+// CreateBlockchain 创建一个新的区块链数据库
+// address 用来接收挖出创世块的奖励
+func CreateBlockchain(address string) *handel.BlockChain {
+	if dbExists() {
+		fmt.Println("Blockchain already exists.")
+		os.Exit(1)
+	}
+
+	var tip []byte
+	db, err := bolt.Open(dbFile, 0600, nil)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	err = db.Update(func(tx *bolt.Tx) error {
+		cbtx := handel.NewCoinbaseTX(address, "genesisCoinbaseData")
+		genesis := handel.NewGenesisBlock(cbtx)
+
+		b, err := tx.CreateBucket([]byte("blocksBucket"))
+		if err != nil {
+			log.Panic(err)
 		}
+
+		err = b.Put(genesis.Hash, genesis.Serialize())
+		if err != nil {
+			log.Panic(err)
+		}
+
+		err = b.Put([]byte("l"), genesis.Hash)
+		if err != nil {
+			log.Panic(err)
+		}
+		tip = genesis.Hash
 
 		return nil
 	})
 
-	return &handel.BlockChain{Tip: tip, Db: db}
+	if err != nil {
+		log.Panic(err)
+	}
+
+	bc := handel.BlockChain{tip, db}
+
+	return &bc
 }

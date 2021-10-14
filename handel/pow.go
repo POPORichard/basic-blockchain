@@ -33,19 +33,19 @@ func (pow *ProofOfWork) prepareData(nonce int) []byte {
 	data := bytes.Join(
 		[][]byte{
 			pow.block.PrevBlockHash,
-			pow.block.Data,
-			IntToHex(pow.block.Timestamp),
-			IntToHex(int64(targetBits)),
-			IntToHex(int64(nonce)),
+			pow.block.hashTransactions(),
+			intToHex(pow.block.Timestamp),
+			intToHex(int64(targetBits)),
+			intToHex(int64(nonce)),
 		},
 		[]byte{},
 	)
 	return data
 }
 
-func (pow *ProofOfWork) Run() (int, []byte){
+func (pow *ProofOfWork) Run() (int, []byte) {
 	var hashInt big.Int
-	var hash[32]byte
+	var hash [32]byte
 	nonce := 0
 
 	for {
@@ -53,11 +53,11 @@ func (pow *ProofOfWork) Run() (int, []byte){
 		hash = sha256.Sum256(data)
 		hashInt.SetBytes(hash[:])
 
-		if hashInt.Cmp(pow.target) == -1{
+		if hashInt.Cmp(pow.target) == -1 {
 			break
-		}else{
-			if nonce == math.MaxInt32{
-				fmt.Println("can not get answer! data : ",data)
+		} else {
+			if nonce == math.MaxInt32 {
+				fmt.Println("can not get answer! data : ", data)
 				panic("pow Error")
 			}
 			nonce++
@@ -66,13 +66,11 @@ func (pow *ProofOfWork) Run() (int, []byte){
 	return nonce, hash[:]
 }
 
-
-
-func IntToHex(n int64) []byte {
+func intToHex(n int64) []byte {
 	return []byte(strconv.FormatInt(n, 16))
 }
 
-func (pow *ProofOfWork) Validate() bool{
+func (pow *ProofOfWork) Validate() bool {
 	var hashInt big.Int
 
 	data := pow.prepareData(pow.block.Nonce)
@@ -82,4 +80,22 @@ func (pow *ProofOfWork) Validate() bool{
 	return hashInt.Cmp(pow.target) == -1
 }
 
+//hashTransactions 用于计算交易的hash
+/*
+比特币使用了一种更复杂的技术：
+它将包含在一个块中的所有交易表示为Merkle 树，
+并在工作量证明系统中使用树的根哈希。
+这种方法允许快速检查一个块是否包含某个交易，
+只有根哈希，而无需下载所有交易。
+*/
+func (block *Block) hashTransactions() []byte {
+	var txHashes [][]byte
+	var txHash [32]byte
 
+	for _, tx := range block.Transaction {
+		txHashes = append(txHashes, tx.ID)
+	}
+	txHash = sha256.Sum256(bytes.Join(txHashes, []byte{}))
+
+	return txHash[:]
+}

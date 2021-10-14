@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 )
+
 // 计算块hash
 //func (block *Block) SetHash() {
 //	timestamp := []byte(strconv.FormatInt(block.Timestamp, 10))
@@ -23,8 +24,14 @@ import (
 //}
 
 //带pow创建新block
-func NewBlock(data string, prevBlockHash []byte) *Block{
-	block := &Block{time.Now().Unix(), []byte(data), prevBlockHash, []byte{}, 0}
+func NewBlock(transaction []*Transaction, prevBlockHash []byte) *Block {
+	block := &Block{
+		Timestamp:     time.Now().Unix(),
+		PrevBlockHash: prevBlockHash,
+		Hash:          []byte{},
+		Nonce:         0,
+		Transaction:   transaction,
+	}
 	pow := NewProofOfWork(block)
 
 	nonce, hash := pow.Run()
@@ -35,33 +42,32 @@ func NewBlock(data string, prevBlockHash []byte) *Block{
 }
 
 // 创建创世块
-func NewGenesisBlock() *Block{
-	return NewBlock("Genesis Block", []byte{})
+func NewGenesisBlock(coinBase *Transaction) *Block {
+	return NewBlock([]*Transaction{coinBase}, []byte{})
 }
 
 //序列化
-func (block *Block) Serialize() []byte{
+func (block *Block) Serialize() []byte {
 	var result bytes.Buffer
 	encoder := gob.NewEncoder(&result)
 
 	err := encoder.Encode(block)
-	if err != nil{
+	if err != nil {
 		fmt.Println("Error in Serialize err: ", err)
 		return []byte{}
 	}
 
-	return  result.Bytes()
+	return result.Bytes()
 }
 
 // 反序列化
-func Deserialize (b []byte) *Block{
+func Deserialize(b []byte) *Block {
 	var block Block
 	decoder := gob.NewDecoder(bytes.NewReader(b))
 	err := decoder.Decode(&block)
-	if err != nil{
+	if err != nil {
 		fmt.Println("Error in Deserialize err: ", err)
 		return nil
 	}
 	return &block
 }
-

@@ -7,10 +7,10 @@ import (
 
 type BlockChainIterator struct {
 	currentHash []byte
-	db *bolt.DB
+	db          *bolt.DB
 }
 
-func (bc *BlockChain) Iterator() *BlockChainIterator{
+func (bc *BlockChain) Iterator() *BlockChainIterator {
 	bci := &BlockChainIterator{
 		currentHash: bc.Tip,
 		db:          bc.Db,
@@ -19,10 +19,10 @@ func (bc *BlockChain) Iterator() *BlockChainIterator{
 	return bci
 }
 
-func (i *BlockChainIterator) Next() *Block{
+func (i *BlockChainIterator) Next() *Block {
 	var block *Block
 
-	err := i.db.View(func (tx *bolt.Tx) error {
+	err := i.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("blocksBucket"))
 		encodedBlock := b.Get(i.currentHash)
 		block = Deserialize(encodedBlock)
@@ -30,7 +30,7 @@ func (i *BlockChainIterator) Next() *Block{
 		return nil
 	})
 
-	if err != nil{
+	if err != nil {
 		fmt.Println("Iterator Error err:", err)
 	}
 
