@@ -8,18 +8,20 @@ import (
 	"fmt"
 	"log"
 )
-
+//奖励
 const subsidy = 50
 
+//交易输出
 type TXOutput struct {
-	Value        int
-	ScriptPubKey string
+	Value        int		//数量
+	ScriptPubKey string		//地址
 }
 
+//交易输入
 type TXInput struct {
 	Txid      []byte
-	Vout      int
-	ScriptSig string
+	Vout      int		//交易输出的索引
+	ScriptSig string	//地址
 }
 
 type Transaction struct {
@@ -28,6 +30,7 @@ type Transaction struct {
 	VOut []TXOutput
 }
 
+// 创建一个新的coinbase交易
 func NewCoinbaseTX(to, data string) *Transaction {
 	if data == "" {
 		data = fmt.Sprintf("Reward to '%s'", to)
@@ -108,14 +111,17 @@ Work:
 	return accumulated, unspentOutputs
 }
 
+//是否能解锁输入
 func (in *TXInput) CanUnlockOutPutWith(unLockingData string) bool {
 	return in.ScriptSig == unLockingData
 }
 
+//是否能解锁输出
 func (out *TXOutput) CanBeUnlockedWith(unlockingData string) bool {
 	return out.ScriptPubKey == unlockingData
 }
 
+//找到有未花费的输出交易
 func (bc *BlockChain) FindUnspentTransactions(address string) []Transaction {
 	var unspentTXs []Transaction
 	spentTXOs := make(map[string][]int)
