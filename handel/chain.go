@@ -1,12 +1,19 @@
 package handel
 
 import (
+	"bytes"
 	"crypto/ecdsa"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"github.com/boltdb/bolt"
 	"log"
 )
+
+type BlockChain struct {
+	Tip []byte
+	Db  *bolt.DB
+}
 
 //// 向链上添加块
 //func (blockChain *BlockChain) AddBlock(data string) {
@@ -97,5 +104,109 @@ func (bc *BlockChain) VerifyTransaction(tx *Transaction) bool{
 	}
 
 	return tx.Verify(prevTXs)
+}
+
+//查找并返回所有未花费的transaction outputs
+func (bc *BlockChain) FindUTXO(pubKeyHash []byte) []TXOutput {
+	var UTXOs []TXOutput
+	unspentTransactions := bc.FindUnspentTransactions(pubKeyHash)
+
+	for _, tx := range unspentTransactions {
+		for _, out := range tx.VOut {
+			if out.IsLockedWithKey(pubKeyHash) {
+				UTXOs = append(UTXOs, out)
+			}
+		}
+	}
+	return UTXOs
+}
+
+//找到有未花费的输出交易
+func (bc *BlockChain) FindUnspentTransactions(pubKeyHash []byte) []Transaction {
+	var unspentTXs []Transaction
+	spentTXOs := make(map[string][]int)
+	bci := bc.Iterator()
+
+	for {
+		block := bci.Next()
+
+		for _, tx := range block.Transaction {
+			txID := hex.EncodeToString(tx.ID)
+
+		Output:
+			for outIdx, out := range tx.VOut {
+				if spentTXOs[txID] != nil {
+					for _, spentOutIdx := range spentTXOs[txID] {
+						if spentOutIdx == outIdx {
+							continue Output
+						}
+					}
+				}
+
+				if out.IsLockedWithKey(pubKeyHash) {
+					unspentTXs = append(unspentTXs, *tx)
+				}
+			}
+
+			if tx.IsCoinbase() == false {
+				for _, in := range tx.Vin {
+					if in.UsesKey(pubKeyHash) {
+						inTxId := hex.EncodeToString(in.Txid)
+						spentTXOs[inTxId] = append(spentTXOs[inTxId], in.Vout)
+					}
+				}
+			}
+		}
+		if len(block.PrevBlockHash) == 0 {
+			break
+		}
+	}
+	return unspentTXs
+}
+
+//通过ID查找交易
+func (bc *BlockChain)FindTransaction(ID []byte) (Transaction, error){
+	bci := bc.Iterator()
+
+	for{
+		block := bci.Next()
+
+		for _,tx := range block.Transaction{
+			if bytes.Compare(tx.ID, ID) == 0{
+				return *tx, nil
+			}
+		}
+
+		if len(block.PrevBlockHash) == 0{
+			break
+		}
+	}
+
+	return Transaction{}, errors.New("Transaction is not found")
+}
+
+//查找并返回未花费的outputs
+func (bc *BlockChain) FindSpendableOutPuts(pubKeyHash []byte, amount int) (int, map[string][]int) {
+	unspentOutputs := make(map[string][]int)
+	unspentTXs := bc.FindUnspentTransactions(pubKeyHash)
+	accumulated := 0
+
+Work:
+	for _, tx := range unspentTXs {
+		txID := hex.EncodeToString(tx.ID)
+
+		for outIdx, out := range tx.VOut {
+			if out.IsLockedWithKey(pubKeyHash) && accumulated < amount {
+				accumulated += out.Value
+				unspentOutputs[txID] = append(unspentOutputs[txID], outIdx)
+
+				if accumulated >= amount {
+					break Work
+				}
+			}
+		}
+	}
+
+	return accumulated, unspentOutputs
 }
 

@@ -7,6 +7,7 @@ import (
 	"log"
 )
 
+//打印余额
 func (cli *CLI) getBalance(address string) {
 	if !add.ValidateAddress(address) {
 		log.Panic("ERROR: Address is not valid")

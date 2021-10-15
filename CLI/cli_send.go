@@ -8,6 +8,7 @@ import (
 	"log"
 )
 
+//打钱
 func (cli *CLI) send(from, to string, amount int) {
 	if !address.ValidateAddress(from) {
 		log.Panic("ERROR: Sender address is not valid")

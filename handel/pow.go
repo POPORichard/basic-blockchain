@@ -79,23 +79,3 @@ func (pow *ProofOfWork) Validate() bool {
 
 	return hashInt.Cmp(pow.target) == -1
 }
-
-//hashTransactions 用于计算交易的hash
-/*
-比特币使用了一种更复杂的技术：
-它将包含在一个块中的所有交易表示为Merkle 树，
-并在工作量证明系统中使用树的根哈希。
-这种方法允许快速检查一个块是否包含某个交易，
-只有根哈希，而无需下载所有交易。
-*/
-func (block *Block) hashTransactions() []byte {
-	var txHashes [][]byte
-	var txHash [32]byte
-
-	for _, tx := range block.Transaction {
-		txHashes = append(txHashes, tx.ID)
-	}
-	txHash = sha256.Sum256(bytes.Join(txHashes, []byte{}))
-
-	return txHash[:]
-}

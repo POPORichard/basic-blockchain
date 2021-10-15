@@ -7,6 +7,7 @@ import (
 	"log"
 )
 
+//打印钱包的所有地址
 func (cli *CLI) listAddresses() {
 	wallets, err := address.NewWallets()
 	if err != nil {

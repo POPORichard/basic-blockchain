@@ -9,7 +9,6 @@ import (
 	"crypto/sha256"
 	"encoding/gob"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"log"
 	"math/big"
@@ -17,22 +16,6 @@ import (
 )
 //奖励
 const subsidy = 50
-
-//交易输出
-type TXOutput struct {
-	Value        int		//数量
-	//ScriptPubKey string		//地址
-	PubKeyHash []byte
-}
-
-//交易输入
-type TXInput struct {
-	Txid      []byte
-	Vout      int		//交易输出的索引
-	//ScriptSig string	//地址
-	Signature []byte
-	PubKey    []byte
-}
 
 type Transaction struct {
 	ID   []byte
@@ -63,6 +46,7 @@ func NewCoinbaseTX(to, data string) *Transaction {
 	return &tx
 }
 
+//创建一个新的交易
 func NewUTXOTransaction(from, to string, amount int, bc *BlockChain) *Transaction {
 	var inputs []TXInput
 	var outPuts []TXOutput
@@ -105,53 +89,10 @@ func NewUTXOTransaction(from, to string, amount int, bc *BlockChain) *Transactio
 		VOut: outPuts,
 	}
 	tx.ID = tx.Hash()
+	//用私钥对交易签名
 	bc.SignTransaction(&tx, wallet.PrivateKey)
 
 	return &tx
-}
-
-func (bc *BlockChain) FindSpendableOutPuts(pubKeyHash []byte, amount int) (int, map[string][]int) {
-	unspentOutputs := make(map[string][]int)
-	unspentTXs := bc.FindUnspentTransactions(pubKeyHash)
-	accumulated := 0
-
-Work:
-	for _, tx := range unspentTXs {
-		txID := hex.EncodeToString(tx.ID)
-
-		for outIdx, out := range tx.VOut {
-			if out.IsLockedWithKey(pubKeyHash) && accumulated < amount {
-				accumulated += out.Value
-				unspentOutputs[txID] = append(unspentOutputs[txID], outIdx)
-
-				if accumulated >= amount {
-					break Work
-				}
-			}
-		}
-	}
-
-	return accumulated, unspentOutputs
-}
-
-func (bc *BlockChain)FindTransaction(ID []byte) (Transaction, error){
-	bci := bc.Iterator()
-
-	for{
-		block := bci.Next()
-
-		for _,tx := range block.Transaction{
-			if bytes.Compare(tx.ID, ID) == 0{
-				return *tx, nil
-			}
-		}
-
-		if len(block.PrevBlockHash) == 0{
-			break
-		}
-	}
-
-	return Transaction{}, errors.New("Transaction is not found")
 }
 
 //返回用户可读的交易信息
@@ -196,63 +137,6 @@ func(tx *Transaction) TrimmedCopy() Transaction{
 	return txCopy
 }
 
-//找到有未花费的输出交易
-func (bc *BlockChain) FindUnspentTransactions(pubKeyHash []byte) []Transaction {
-	var unspentTXs []Transaction
-	spentTXOs := make(map[string][]int)
-	bci := bc.Iterator()
-
-	for {
-		block := bci.Next()
-
-		for _, tx := range block.Transaction {
-			txID := hex.EncodeToString(tx.ID)
-
-		Output:
-			for outIdx, out := range tx.VOut {
-				if spentTXOs[txID] != nil {
-					for _, spentOutIdx := range spentTXOs[txID] {
-						if spentOutIdx == outIdx {
-							continue Output
-						}
-					}
-				}
-
-				if out.IsLockedWithKey(pubKeyHash) {
-					unspentTXs = append(unspentTXs, *tx)
-				}
-			}
-
-			if tx.IsCoinbase() == false {
-				for _, in := range tx.Vin {
-					if in.UsesKey(pubKeyHash) {
-						inTxId := hex.EncodeToString(in.Txid)
-						spentTXOs[inTxId] = append(spentTXOs[inTxId], in.Vout)
-					}
-				}
-			}
-		}
-		if len(block.PrevBlockHash) == 0 {
-			break
-		}
-	}
-	return unspentTXs
-}
-
-func (bc *BlockChain) FindUTXO(pubKeyHash []byte) []TXOutput {
-	var UTXOs []TXOutput
-	unspentTransactions := bc.FindUnspentTransactions(pubKeyHash)
-
-	for _, tx := range unspentTransactions {
-		for _, out := range tx.VOut {
-			if out.IsLockedWithKey(pubKeyHash) {
-				UTXOs = append(UTXOs, out)
-			}
-		}
-	}
-	return UTXOs
-}
-
 //序列化transaction
 func (tx Transaction)Serialize() []byte{
 	var encoded bytes.Buffer
@@ -278,6 +162,7 @@ func (tx *Transaction)Hash() []byte{
 	return hash[:]
 }
 
+//对transaction中的每个input进行签名
 func (tx *Transaction)Sign(privKey ecdsa.PrivateKey, prevTXs map[string]Transaction){
 	if tx.IsCoinbase(){
 		return
@@ -310,36 +195,6 @@ func (tx *Transaction)Sign(privKey ecdsa.PrivateKey, prevTXs map[string]Transact
 
 func (tx Transaction) IsCoinbase() bool {
 	return len(tx.Vin) == 1 && len(tx.Vin[0].Txid) == 0 && tx.Vin[0].Vout == -1
-}
-
-//用公钥检测是否是其发起了交易
-func (in *TXInput)UsesKey(pubKeyHash []byte) bool{
-	lockingHash := add.HashPubKey(in.PubKey)
-
-	return bytes.Compare(lockingHash, pubKeyHash) == 0
-}
-
-//对output签名
-func (out *TXOutput)Lock(address []byte){
-	pubKeyHash := add.Base58Decode(address)
-	pubKeyHash = pubKeyHash[1:len(pubKeyHash)-4]
-	out.PubKeyHash = pubKeyHash
-}
-
-//检查output是否可以用公钥解锁
-func (out *TXOutput) IsLockedWithKey(pubKeyHash []byte) bool{
-	return bytes.Compare(out.PubKeyHash, pubKeyHash) == 0
-}
-
-//创建新output
-func NewTXOutput(value int, address string) *TXOutput{
-	txo := &TXOutput{
-		Value:      value,
-		PubKeyHash: nil,
-	}
-	txo.Lock([]byte(address))
-
-	return txo
 }
 
 //验证交易vin的签名

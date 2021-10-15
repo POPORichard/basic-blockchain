@@ -22,7 +22,7 @@ func Base58Encode(input []byte) []byte {
 		result = append(result, b58Alphabet[mod.Int64()])
 	}
 
-	ReverseBytes(result)
+	reverseBytes(result)
 	for b := range input {
 		if b == 0x00 {
 			result = append([]byte{b58Alphabet[0]}, result...)
@@ -58,8 +58,8 @@ func Base58Decode(input []byte) []byte {
 	return decoded
 }
 
-// ReverseBytes reverses a byte array
-func ReverseBytes(data []byte) {
+// 反转
+func reverseBytes(data []byte) {
 	for i, j := 0, len(data)-1; i < j; i, j = i+1, j-1 {
 		data[i], data[j] = data[j], data[i]
 	}

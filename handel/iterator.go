@@ -5,6 +5,7 @@ import (
 	"github.com/boltdb/bolt"
 )
 
+//用于遍历区块连
 type BlockChainIterator struct {
 	currentHash []byte
 	db          *bolt.DB
@@ -19,6 +20,7 @@ func (bc *BlockChain) Iterator() *BlockChainIterator {
 	return bci
 }
 
+//返回tip的下一个块
 func (i *BlockChainIterator) Next() *Block {
 	var block *Block
 
