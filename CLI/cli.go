@@ -162,7 +162,7 @@ func (cli *CLI) PrintChain(num int) {
 }
 
 func (cli *CLI) send(from, to string, amount int) {
-	bc := database.CreateBlockchain(from)
+	bc := database.NewBlockchainLink()
 	defer bc.Db.Close()
 
 	tx := handel.NewUTXOTransaction(from, to, amount, bc)
