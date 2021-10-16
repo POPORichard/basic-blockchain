@@ -2,7 +2,6 @@ package handel
 
 import (
 	"bytes"
-	"crypto/sha256"
 	"encoding/gob"
 	"fmt"
 	"time"
@@ -90,13 +89,17 @@ func Deserialize(b []byte) *Block {
 只有根哈希，而无需下载所有交易。
 */
 func (block *Block) hashTransactions() []byte {
-	var txHashes [][]byte
-	var txHash [32]byte
+	//var txHashes [][]byte
+	//var txHash [32]byte
+	var transactions [][]byte
 
 	for _, tx := range block.Transaction {
-		txHashes = append(txHashes, tx.ID)
+		//txHashes = append(txHashes, tx.ID)
+		transactions = append(transactions, tx.Serialize())
 	}
-	txHash = sha256.Sum256(bytes.Join(txHashes, []byte{}))
+	//txHash = sha256.Sum256(bytes.Join(txHashes, []byte{}))
+	mTree := NewMerkleTree(transactions)
 
-	return txHash[:]
+	//return txHash[:]
+	return mTree.RootNode.Data
 }
