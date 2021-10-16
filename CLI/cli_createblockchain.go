@@ -4,6 +4,7 @@ import (
 
 	add "basic-blockchain/address"
 	"basic-blockchain/database"
+	"basic-blockchain/handel"
 	"fmt"
 	"log"
 )
@@ -13,6 +14,10 @@ func (cli *CLI) createBlockchain(address string) {
 		log.Panic("ERROR: Address is not valid")
 	}
 	bc := database.CreateBlockchain(address)
-	bc.Db.Close()
+	defer bc.Db.Close()
+
+	UTXOSet := handel.UTXOSet{BlockChain:bc}
+	UTXOSet.Reindex()
+
 	fmt.Println("Done!")
 }

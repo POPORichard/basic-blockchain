@@ -1,7 +1,6 @@
-package database
+package handel
 
 import (
-	"basic-blockchain/handel"
 	"encoding/hex"
 	"github.com/boltdb/bolt"
 	"log"
@@ -9,7 +8,7 @@ import (
 
 //unspent transaction out
 type UTXOSet struct {
-	BlockChain *handel.BlockChain
+	BlockChain *BlockChain
 }
 
 const UTXOBucket = "UTXOBucket"
@@ -68,7 +67,7 @@ func (u UTXOSet)FindSpendableOutputs(pubKeyHash []byte, amount int)(int, map[str
 
 		for k,v := c.First(); k!=nil;k,v = c.Next(){
 			txID := hex.EncodeToString(k)
-			outs := handel.DeserializeOutputs(v)
+			outs := DeserializeOutputs(v)
 
 			for outIdx ,out := range outs.Outputs {
 				if out.IsLockedWithKey(pubKeyHash) && accumulated < amount{
@@ -89,8 +88,8 @@ func (u UTXOSet)FindSpendableOutputs(pubKeyHash []byte, amount int)(int, map[str
 }
 
 //查找公钥对应的UTXOs
-func (u UTXOSet)FindUTXO(pubKeyHash []byte) []handel.TXOutput {
-	var UTXOs []handel.TXOutput
+func (u UTXOSet)FindUTXO(pubKeyHash []byte) []TXOutput {
+	var UTXOs []TXOutput
 	db := u.BlockChain.Db
 
 	err := db.View(func(tx *bolt.Tx) error {
@@ -98,7 +97,7 @@ func (u UTXOSet)FindUTXO(pubKeyHash []byte) []handel.TXOutput {
 		c := b.Cursor()
 
 		for k,v := c.First(); k!= nil; k,v = c.Next(){
-			outs := handel.DeserializeOutputs(v)
+			outs := DeserializeOutputs(v)
 
 			for _,out :=range outs.Outputs{
 				if out.IsLockedWithKey(pubKeyHash){
@@ -116,7 +115,7 @@ func (u UTXOSet)FindUTXO(pubKeyHash []byte) []handel.TXOutput {
 
 // Update 使用来自区块的交易更新 UTXO 集
 // 该块被认为是区块链的尖端
-func (u UTXOSet) Update(block *handel.Block){
+func (u UTXOSet) Update(block *Block){
 	db := u.BlockChain.Db
 
 	err := db.Update(func(tx *bolt.Tx) error {
@@ -125,9 +124,9 @@ func (u UTXOSet) Update(block *handel.Block){
 		for _,tx := range block.Transaction{
 			if tx.IsCoinbase() == false{
 				for _, vin := range tx.Vin{
-					updateOuts := handel.TXOutputs{}
+					updateOuts := TXOutputs{}
 					outsBytes := b.Get(vin.Txid)
-					outs := handel.DeserializeOutputs(outsBytes)
+					outs := DeserializeOutputs(outsBytes)
 
 					for outIdx, out := range outs.Outputs{
 						if outIdx != vin.Vout{
@@ -147,7 +146,7 @@ func (u UTXOSet) Update(block *handel.Block){
 					}
 				}
 			}
-			newOutpust := handel.TXOutputs{}
+			newOutpust := TXOutputs{}
 			for _,out := range tx.VOut{
 				newOutpust.Outputs = append(newOutpust.Outputs, out)
 			}

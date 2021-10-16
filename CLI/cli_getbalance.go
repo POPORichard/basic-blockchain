@@ -3,6 +3,7 @@ package CLI
 import (
 	add "basic-blockchain/address"
 	"basic-blockchain/database"
+	"basic-blockchain/handel"
 	"fmt"
 	"log"
 )
@@ -14,11 +15,12 @@ func (cli *CLI) getBalance(address string) {
 	}
 	bc := database.NewBlockchainLink()
 	defer bc.Db.Close()
+	UTXOSet := handel.UTXOSet{BlockChain:bc}
 
 	balance := 0
 	pubKeyHash := add.Base58Decode([]byte(address))
 	pubKeyHash = pubKeyHash[1 : len(pubKeyHash)-4]
-	UTXOs := bc.FindUTXO(pubKeyHash)
+	UTXOs := UTXOSet.FindUTXO(pubKeyHash)
 
 	for _, out := range UTXOs {
 		balance += out.Value
