@@ -8,8 +8,8 @@ import (
 )
 
 //打印钱包的所有地址
-func (cli *CLI) listAddresses() {
-	wallets, err := address.NewWallets()
+func (cli *CLI) listAddresses(nodeID string) {
+	wallets, err := address.NewWallets(nodeID)
 	if err != nil {
 		log.Panic(err)
 	}

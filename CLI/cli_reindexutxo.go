@@ -1,13 +1,12 @@
 package CLI
 
 import (
-	"basic-blockchain/database"
 	"basic-blockchain/handel"
 	"fmt"
 )
 
-func (cli *CLI) reindexUTXO() {
-	bc := database.NewBlockchainLink()
+func (cli *CLI) reindexUTXO(nodeID string) {
+	bc := handel.NewBlockchainLink(nodeID)
 	UTXOSet := handel.UTXOSet{BlockChain: bc}
 	UTXOSet.Reindex()
 

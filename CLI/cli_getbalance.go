@@ -2,18 +2,17 @@ package CLI
 
 import (
 	add "basic-blockchain/address"
-	"basic-blockchain/database"
 	"basic-blockchain/handel"
 	"fmt"
 	"log"
 )
 
 //打印余额
-func (cli *CLI) getBalance(address string) {
+func (cli *CLI) getBalance(address string, nodeID string) {
 	if !add.ValidateAddress(address) {
 		log.Panic("ERROR: Address is not valid")
 	}
-	bc := database.NewBlockchainLink()
+	bc := handel.NewBlockchainLink(nodeID)
 	defer bc.Db.Close()
 	UTXOSet := handel.UTXOSet{BlockChain:bc}
 

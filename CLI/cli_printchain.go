@@ -1,7 +1,6 @@
 package CLI
 
 import (
-	"basic-blockchain/database"
 	"basic-blockchain/handel"
 	"bytes"
 	"encoding/gob"
@@ -10,8 +9,8 @@ import (
 )
 
 //打印区块连
-func (cli *CLI) printChain() {
-	bc := database.NewBlockchainLink()
+func (cli *CLI) printChain(nodeID string) {
+	bc := handel.NewBlockchainLink(nodeID)
 	defer bc.Db.Close()
 
 	bci := bc.Iterator()
@@ -20,6 +19,7 @@ func (cli *CLI) printChain() {
 		block := bci.Next()
 
 		fmt.Printf("============ Block %x ============\n", block.Hash)
+		fmt.Printf("Height: %d\n", block.Height)
 		fmt.Printf("Prev block: %x\n", block.PrevBlockHash)
 		pow := handel.NewProofOfWork(block)
 		fmt.Printf("PoW: %s\n", strconv.FormatBool(pow.Validate()))

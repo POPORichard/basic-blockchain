@@ -9,19 +9,19 @@ import (
 	"os"
 )
 
-const walletFile = "wallet.dat"
+const walletFile = "wallet_%s.dat"
 
 type Wallets struct {
 	Wallets map[string]*Wallet
 }
 
 //创建钱包并尝试从文件中读取
-func NewWallets() (*Wallets, error){
+func NewWallets(nodeID string) (*Wallets, error){
 	wallets := Wallets{}
 
 	wallets.Wallets = make(map[string]*Wallet)
 
-	err := wallets.LoadFromFile()
+	err := wallets.LoadFromFile(nodeID)
 
 	return &wallets,err
 }
@@ -52,7 +52,8 @@ func (ws Wallets) GetWallet (address string) Wallet{
 }
 
 //从文件读取wallets
-func (ws *Wallets)LoadFromFile() error{
+func (ws *Wallets)LoadFromFile(nodeID string) error{
+	walletFile := fmt.Sprintf(walletFile, nodeID)
 	if _,err := os.Stat(walletFile); os.IsNotExist(err){
 		return err
 	}
@@ -77,8 +78,9 @@ func (ws *Wallets)LoadFromFile() error{
 }
 
 // 将wallets存储到文件
-func (ws Wallets)SaveToFile(){
+func (ws Wallets)SaveToFile(nodeID string){
 	var content bytes.Buffer
+	walletFile := fmt.Sprintf(walletFile, nodeID)
 
 	gob.Register(elliptic.P256())
 

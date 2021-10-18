@@ -1,16 +1,16 @@
-package database
+package handel
 
 import (
-	"basic-blockchain/handel"
 	"fmt"
 	"github.com/boltdb/bolt"
 	"log"
 	"os"
 )
 
-const dbFile = "my.db"
+const BlocksBucketName = "blocksBucket"
+const dbFile = "blockChain_%s.db"
 
-func dbExists() bool {
+func dbExists(dbFile string) bool {
 	if _, err := os.Stat(dbFile); os.IsNotExist(err) {
 		return false
 	}
@@ -19,8 +19,9 @@ func dbExists() bool {
 }
 
 // 创建一个指向最新block的链接
-func NewBlockchainLink() *handel.BlockChain {
-	if dbExists() == false {
+func NewBlockchainLink(nodeID string) *BlockChain {
+	dbFile := fmt.Sprintf(dbFile, nodeID)
+	if dbExists(dbFile) == false {
 		fmt.Println("No existing blockchain found. Create one first.")
 		os.Exit(1)
 	}
@@ -31,7 +32,7 @@ func NewBlockchainLink() *handel.BlockChain {
 	}
 
 	err = db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte("blocksBucket"))
+		b := tx.Bucket([]byte(BlocksBucketName))
 		tip = b.Get([]byte("l"))
 
 		return nil
@@ -40,7 +41,7 @@ func NewBlockchainLink() *handel.BlockChain {
 		log.Panic(err)
 	}
 
-	bc := handel.BlockChain{
+	bc := BlockChain{
 		Tip: tip,
 		Db:  db,
 	}
@@ -50,8 +51,9 @@ func NewBlockchainLink() *handel.BlockChain {
 
 // CreateBlockchain 创建一个新的区块链数据库
 // address 用来接收挖出创世块的奖励
-func CreateBlockchain(address string) *handel.BlockChain {
-	if dbExists() {
+func CreateBlockchain(address string, nodeID string) *BlockChain {
+	dbFile := fmt.Sprintf(dbFile, nodeID)
+	if dbExists(dbFile) {
 		fmt.Println("Blockchain already exists.")
 		os.Exit(1)
 	}
@@ -63,10 +65,10 @@ func CreateBlockchain(address string) *handel.BlockChain {
 	}
 
 	err = db.Update(func(tx *bolt.Tx) error {
-		cbtx := handel.NewCoinbaseTX(address, "genesisCoinbaseData")
-		genesis := handel.NewGenesisBlock(cbtx)
+		cbtx := NewCoinbaseTX(address, "genesisCoinbaseData")
+		genesis := NewGenesisBlock(cbtx)
 
-		b, err := tx.CreateBucket([]byte("blocksBucket"))
+		b, err := tx.CreateBucket([]byte(BlocksBucketName))
 		if err != nil {
 			log.Panic(err)
 		}
@@ -89,7 +91,7 @@ func CreateBlockchain(address string) *handel.BlockChain {
 		log.Panic(err)
 	}
 
-	bc := handel.BlockChain{tip, db}
+	bc := BlockChain{tip, db}
 
 	return &bc
 }

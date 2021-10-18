@@ -2,14 +2,14 @@ package CLI
 
 import (
 	"basic-blockchain/address"
-	"basic-blockchain/database"
 	"basic-blockchain/handel"
+	"basic-blockchain/server"
 	"fmt"
 	"log"
 )
 
 //打钱
-func (cli *CLI) send(from, to string, amount int) {
+func (cli *CLI) send(from, to string, amount int, nodeID string, mineNow bool) {
 	if !address.ValidateAddress(from) {
 		log.Panic("ERROR: Sender address is not valid")
 	}
@@ -17,18 +17,28 @@ func (cli *CLI) send(from, to string, amount int) {
 		log.Panic("ERROR: Recipient address is not valid")
 	}
 
-	bc := database.NewBlockchainLink()
+	bc := handel.NewBlockchainLink(nodeID)
 	defer bc.Db.Close()
 	UTXOSet := handel.UTXOSet{BlockChain: bc}
 
-	//tx := handel.NewUTXOTransaction(from, to, amount, bc)
-	//bc.MineBlock([]*handel.Transaction{tx})
+	wallets, err := address.NewWallets(nodeID)
+	if err != nil{
+		panic(err)
+	}
 
-	tx := handel.NewUTXOTransaction(from, to, amount, &UTXOSet)
-	cbTx := handel.NewCoinbaseTX(from, "coinBase")
-	txs := []*handel.Transaction{cbTx, tx}
+	wallet := wallets.GetWallet(from)
 
-	newBlock := bc.MineBlock(txs)
-	UTXOSet.Update(newBlock)
+	tx := handel.NewUTXOTransaction(&wallet, to, amount, &UTXOSet)
+
+	if mineNow{
+		cbTx := handel.NewCoinbaseTX(from, "")
+		txs := []*handel.Transaction{cbTx, tx}
+
+		newBlock := bc.MineBlock(txs)
+		UTXOSet.Update(newBlock)
+	}else {
+		server.SendTx(server.KnownNodes[0], tx)
+	}
+
 	fmt.Println("Success!")
 }

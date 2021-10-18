@@ -13,6 +13,7 @@ type Block struct {
 	Hash          []byte
 	Nonce         int
 	Transaction   []*Transaction
+	Height 		  int
 }
 
 // 计算块hash
@@ -32,13 +33,14 @@ type Block struct {
 //}
 
 //带pow创建新block
-func NewBlock(transaction []*Transaction, prevBlockHash []byte) *Block {
+func NewBlock(transaction []*Transaction, prevBlockHash []byte, height int) *Block {
 	block := &Block{
 		Timestamp:     time.Now().Unix(),
 		PrevBlockHash: prevBlockHash,
 		Hash:          []byte{},
 		Nonce:         0,
 		Transaction:   transaction,
+		Height:        height,
 	}
 	pow := NewProofOfWork(block)
 
@@ -51,7 +53,7 @@ func NewBlock(transaction []*Transaction, prevBlockHash []byte) *Block {
 
 // 创建创世块
 func NewGenesisBlock(coinBase *Transaction) *Block {
-	return NewBlock([]*Transaction{coinBase}, []byte{})
+	return NewBlock([]*Transaction{coinBase}, []byte{}, 0)
 }
 
 //序列化
@@ -69,7 +71,7 @@ func (block *Block) Serialize() []byte {
 }
 
 // 反序列化
-func Deserialize(b []byte) *Block {
+func DeserializeBlock(b []byte) *Block {
 	var block Block
 	decoder := gob.NewDecoder(bytes.NewReader(b))
 	err := decoder.Decode(&block)
