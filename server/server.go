@@ -6,6 +6,9 @@ import (
 	"io/ioutil"
 	"log"
 	"net"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 const protocol = "tcp"
@@ -105,13 +108,26 @@ func StartServer(nodeID, minerAddress string) {
 	if nodeAddress != KnownNodes[0] {
 		sendVersion(KnownNodes[0], bc)
 	}
-
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
 			log.Panic(err)
 		}
 		go handleConnection(conn, bc)
+		go func (){
+			c := make(chan os.Signal)
+			defer close(c)
+			signal.Notify(c, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM)
+			for s := range c{
+				switch s {
+				case syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT: // ctrl + c
+					bc.Db.Close()
+					conn.Close()
+					ln.Close()
+					fmt.Println("退出", s)
+				}
+			}
+		}()
 	}
 }
 
