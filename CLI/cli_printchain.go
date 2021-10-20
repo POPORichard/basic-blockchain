@@ -17,7 +17,6 @@ func (cli *CLI) printChain() {
 
 	for {
 		block := bci.Next()
-		//TODO:Print tx
 		fmt.Printf("============ Block %x ============\n", block.Hash)
 		fmt.Printf("Height: %d\n", block.Height)
 		fmt.Printf("Prev block: %x\n", block.PrevBlockHash)

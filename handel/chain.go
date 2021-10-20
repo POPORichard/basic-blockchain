@@ -28,7 +28,7 @@ func (bc *BlockChain) MineBlock(transactions []*Transaction) *Block{
 	var lastHeight int
 
 	for _,tx := range transactions{
-		// TODO: ignore transaction if it's not valid
+		// TODO: 错误处理，不要panic
 		if bc.VerifyTransaction(tx) != true{
 			panic("ERROR: Invalid transaction")
 		}

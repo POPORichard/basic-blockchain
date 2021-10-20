@@ -210,11 +210,10 @@ func handleTx(request []byte, bc *handel.BlockChain) {
 			cbTx := handel.NewCoinbaseTX(miningAddress, "")
 			txs = append(txs, cbTx)
 
-			//出块后对UTXOSet重新建立
-			//TODO：UpdateUTXOS
+			//出块后对UTXOSet更新
 			newBlock := bc.MineBlock(txs)
 			UTXOSet := handel.UTXOSet{bc}
-			UTXOSet.Reindex()
+			UTXOSet.Update(newBlock)
 
 			fmt.Println("New block is mined!")
 
