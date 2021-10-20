@@ -114,6 +114,7 @@ func StartServer(nodeID, minerAddress string) {
 			log.Panic(err)
 		}
 		go handleConnection(conn, bc)
+		//监听退出指令
 		go func (){
 			c := make(chan os.Signal)
 			defer close(c)
