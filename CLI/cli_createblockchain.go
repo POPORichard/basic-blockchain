@@ -4,6 +4,7 @@ import (
 	add "basic-blockchain/address"
 	"basic-blockchain/handel"
 	"fmt"
+	"io/ioutil"
 	"log"
 )
 //创建创世chain并将第一个block的奖励发给address
@@ -18,4 +19,13 @@ func (cli *CLI) createBlockchain(address string, nodeID string) {
 	UTXOSet.Reindex()
 
 	fmt.Println("Done!")
+
+	dbFile := fmt.Sprintf(handel.DbFile, nodeID)
+	genesis := fmt.Sprintf(handel.DbFile, "genesis")
+
+	input, err := ioutil.ReadFile(dbFile)
+	err = ioutil.WriteFile(genesis, input, 0644)
+	if err != nil{
+		fmt.Println("can not create blockChain_genesis")
+	}
 }

@@ -8,9 +8,9 @@ import (
 )
 
 const BlocksBucketName = "blocksBucket"
-const dbFile = "blockChain_%s.db"
+const DbFile = "blockChain_%s.db"
 
-func dbExists(dbFile string) bool {
+func DbExists(dbFile string) bool {
 	if _, err := os.Stat(dbFile); os.IsNotExist(err) {
 		return false
 	}
@@ -20,8 +20,8 @@ func dbExists(dbFile string) bool {
 
 // 创建一个指向最新block的链接
 func NewBlockchainLink(nodeID string) *BlockChain {
-	dbFile := fmt.Sprintf(dbFile, nodeID)
-	if dbExists(dbFile) == false {
+	dbFile := fmt.Sprintf(DbFile, nodeID)
+	if DbExists(dbFile) == false {
 		fmt.Println("No existing blockchain found. Create one first.")
 		os.Exit(1)
 	}
@@ -52,8 +52,8 @@ func NewBlockchainLink(nodeID string) *BlockChain {
 // CreateBlockchain 创建一个新的区块链数据库
 // address 用来接收挖出创世块的奖励
 func CreateBlockchain(address string, nodeID string) *BlockChain {
-	dbFile := fmt.Sprintf(dbFile, nodeID)
-	if dbExists(dbFile) {
+	dbFile := fmt.Sprintf(DbFile, nodeID)
+	if DbExists(dbFile) {
 		fmt.Println("Blockchain already exists.")
 		os.Exit(1)
 	}

@@ -28,3 +28,7 @@ type tx struct {
 	Transaction []byte
 }
 
+type storefile struct {
+	FileData []byte
+}
+

@@ -6,6 +6,7 @@ import (
 	"encoding/gob"
 	"encoding/hex"
 	"fmt"
+	"io/ioutil"
 	"log"
 )
 
@@ -255,3 +256,49 @@ func handleAddr(request []byte) {
 	requestBlocks()
 }
 
+func handleGetStart(request []byte){
+	var buff bytes.Buffer
+	var addrFrom string
+
+
+	buff.Write(request[commandLength:])
+	dec := gob.NewDecoder(&buff)
+	err := dec.Decode(&addrFrom)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	content, err := ioutil.ReadFile("blockChain_genesis.db")
+	if err != nil {
+		log.Panic(err)
+	}
+	payload := gobEncode(storefile{FileData:content})
+	re := append(commandToBytes("storeNode"), payload...)
+
+	sendData(addrFrom, re)
+
+}
+
+func handleStoreFirstNode(request []byte, nodeID string){
+	var buff bytes.Buffer
+	var payload storefile
+
+
+	buff.Write(request[commandLength:])
+	dec := gob.NewDecoder(&buff)
+	err := dec.Decode(&payload)
+	//if err != nil {
+	//	log.Panic(err)
+	//}
+	err = ioutil.WriteFile("blockChain_genesis.db", payload.FileData, 0644)
+	if err != nil{
+		panic(err)
+	}
+
+	dbFile := fmt.Sprintf(handel.DbFile, nodeID)
+	err = ioutil.WriteFile(dbFile, payload.FileData, 0644)
+	if err != nil{
+		panic(err)
+	}
+
+}

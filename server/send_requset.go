@@ -30,3 +30,10 @@ func sendAddr(address string) {
 
 	sendData(address, request)
 }
+
+func sendGetStart(address string){
+	payload := gobEncode(nodeAddress)
+	request := append(commandToBytes("getstart"), payload...)
+
+	sendData(address, request)
+}

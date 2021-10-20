@@ -55,6 +55,8 @@ func handleConnection(conn net.Conn, bc *handel.BlockChain) {
 		handleTx(request, bc)
 	case "version":
 		handleVersion(request, bc)
+	case "getstart":
+		handleGetStart(request)
 	default:
 		fmt.Println("Unknown command!")
 	}
@@ -72,7 +74,33 @@ func StartServer(nodeID, minerAddress string) {
 	}
 	defer ln.Close()
 
+	//启动节点后检查本地是否存在数据库
+	//没有从其他节点获取得创世块
+	dbFile := fmt.Sprintf(handel.DbFile, nodeID)
+	if handel.DbExists(dbFile) == false{
+		sendGetStart(KnownNodes[0])
+		for{
+			firstConn, err := ln.Accept()
+			if err != nil{
+				panic(err)
+			}
+			request, err := ioutil.ReadAll(firstConn)
+			if err != nil {
+				log.Panic(err)
+			}
+			command := bytesToCommand(request[:commandLength])
+			fmt.Printf("Received First %s command\n", command)
+			if command == "storeNode"{
+				handleStoreFirstNode(request, nodeID)
+				break
+			}
+			fmt.Println("waiting for first node")
+		}
+	}
+
 	bc := handel.NewBlockchainLink(nodeID)
+	//TODO:该defer无法执行，将导致数据库错误
+	defer bc.Db.Close()
 
 	if nodeAddress != KnownNodes[0] {
 		sendVersion(KnownNodes[0], bc)

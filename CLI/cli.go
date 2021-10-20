@@ -88,7 +88,7 @@ func (cli *CLI) Run() {
 			log.Panic(err)
 		}
 	default:
-		flag.Usage()
+		cli.printUsage()
 		os.Exit(1)
 	}
 
