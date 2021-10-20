@@ -9,7 +9,7 @@ import (
 )
 
 //打钱
-func (cli *CLI) send(from, to string, amount int, nodeID string, mineNow bool) {
+func (cli *CLI) send(from, to string, amount int, mineNow bool) {
 	if !address.ValidateAddress(from) {
 		log.Panic("ERROR: Sender address is not valid")
 	}
@@ -17,11 +17,11 @@ func (cli *CLI) send(from, to string, amount int, nodeID string, mineNow bool) {
 		log.Panic("ERROR: Recipient address is not valid")
 	}
 
-	bc := handel.NewBlockchainLink(nodeID)
+	bc := handel.NewBlockchainLink()
 	defer bc.Db.Close()
 	UTXOSet := handel.UTXOSet{BlockChain: bc}
 
-	wallets, err := address.NewWallets(nodeID)
+	wallets, err := address.NewWallets()
 	if err != nil{
 		panic(err)
 	}

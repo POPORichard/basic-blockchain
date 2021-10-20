@@ -8,11 +8,11 @@ import (
 )
 
 //打印余额
-func (cli *CLI) getBalance(address string, nodeID string) {
+func (cli *CLI) getBalance(address string) {
 	if !add.ValidateAddress(address) {
 		log.Panic("ERROR: Address is not valid")
 	}
-	bc := handel.NewBlockchainLink(nodeID)
+	bc := handel.NewBlockchainLink()
 	defer bc.Db.Close()
 	UTXOSet := handel.UTXOSet{BlockChain:bc}
 

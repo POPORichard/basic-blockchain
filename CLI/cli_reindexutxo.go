@@ -5,8 +5,8 @@ import (
 	"fmt"
 )
 
-func (cli *CLI) reindexUTXO(nodeID string) {
-	bc := handel.NewBlockchainLink(nodeID)
+func (cli *CLI) reindexUTXO() {
+	bc := handel.NewBlockchainLink()
 	UTXOSet := handel.UTXOSet{BlockChain: bc}
 	UTXOSet.Reindex()
 

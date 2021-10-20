@@ -8,11 +8,11 @@ import (
 	"log"
 )
 //创建创世chain并将第一个block的奖励发给address
-func (cli *CLI) createBlockchain(address string, nodeID string) {
+func (cli *CLI) createBlockchain(address string) {
 	if !add.ValidateAddress(address) {
 		log.Panic("ERROR: Address is not valid")
 	}
-	bc := handel.CreateBlockchain(address,nodeID)
+	bc := handel.CreateBlockchain(address)
 	defer bc.Db.Close()
 
 	UTXOSet := handel.UTXOSet{BlockChain:bc}
@@ -20,11 +20,8 @@ func (cli *CLI) createBlockchain(address string, nodeID string) {
 
 	fmt.Println("Done!")
 
-	dbFile := fmt.Sprintf(handel.DbFile, nodeID)
-	genesis := fmt.Sprintf(handel.DbFile, "genesis")
-
-	input, err := ioutil.ReadFile(dbFile)
-	err = ioutil.WriteFile(genesis, input, 0644)
+	input, err := ioutil.ReadFile(handel.DbFile)
+	err = ioutil.WriteFile(handel.DbFile+"_genesis", input, 0644)
 	if err != nil{
 		fmt.Println("can not create blockChain_genesis")
 	}

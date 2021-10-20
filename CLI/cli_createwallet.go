@@ -5,10 +5,10 @@ import (
 	"fmt"
 )
 //创建钱包并打印公钥给用户
-func (cli *CLI) createWallet(nodeID string) {
-	wallets, _ := address.NewWallets(nodeID)
+func (cli *CLI) createWallet() {
+	wallets, _ := address.NewWallets()
 	address := wallets.CreateWallet()
-	wallets.SaveToFile(nodeID)
+	wallets.SaveToFile()
 
 	fmt.Printf("Your new address: %s\n", address)
 }

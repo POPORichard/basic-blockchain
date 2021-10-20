@@ -6,9 +6,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net"
-	"os"
-	"os/signal"
-	"syscall"
 )
 
 const protocol = "tcp"
@@ -68,10 +65,9 @@ func handleConnection(conn net.Conn, bc *handel.BlockChain) {
 }
 
 // StartServer starts a node
-func StartServer(nodeID, minerAddress string) {
+func StartServer(minerAddress string) {
 	printIP()
-	fmt.Println("port is : ",nodeID)
-	nodeAddress = fmt.Sprintf("172.16.10.49:%s", nodeID)
+	KnownNodes[0], nodeAddress =readConfig()
 	miningAddress = minerAddress
 	ln, err := net.Listen(protocol, nodeAddress)
 	if err != nil {
@@ -81,8 +77,7 @@ func StartServer(nodeID, minerAddress string) {
 
 	//启动节点后检查本地是否存在数据库
 	//没有从其他节点获取得创世块
-	dbFile := fmt.Sprintf(handel.DbFile, nodeID)
-	if handel.DbExists(dbFile) == false{
+	if handel.DbExists(handel.DbFile) == false{
 		sendGetStart(KnownNodes[0])
 		for{
 			firstConn, err := ln.Accept()
@@ -96,15 +91,14 @@ func StartServer(nodeID, minerAddress string) {
 			command := bytesToCommand(request[:commandLength])
 			fmt.Printf("Received First %s command\n", command)
 			if command == "storeNode"{
-				handleStoreFirstNode(request, nodeID)
+				handleStoreFirstNode(request)
 				break
 			}
 			fmt.Println("waiting for first node")
 		}
 	}
 
-	bc := handel.NewBlockchainLink(nodeID)
-	//TODO:该defer无法执行，将导致数据库错误
+	bc := handel.NewBlockchainLink()
 	defer bc.Db.Close()
 
 	if nodeAddress != KnownNodes[0] {
@@ -116,21 +110,6 @@ func StartServer(nodeID, minerAddress string) {
 			log.Panic(err)
 		}
 		go handleConnection(conn, bc)
-		//监听退出指令
-		go func (){
-			c := make(chan os.Signal)
-			defer close(c)
-			signal.Notify(c, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM)
-			for s := range c{
-				switch s {
-				case syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT: // ctrl + c
-					bc.Db.Close()
-					conn.Close()
-					ln.Close()
-					fmt.Println("退出", s)
-				}
-			}
-		}()
 	}
 }
 
@@ -153,7 +132,7 @@ func printIP(){
 	for _,address := range addrs{
 		if ipnet,ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback(){
 			if ipnet.IP.To4() != nil{
-				fmt.Println("IP: ",ipnet.IP.String())
+				fmt.Println("start IP: ",ipnet.IP.String())
 			}
 		}
 	}

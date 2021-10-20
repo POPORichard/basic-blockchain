@@ -268,7 +268,7 @@ func handleGetStart(request []byte){
 		log.Panic(err)
 	}
 
-	content, err := ioutil.ReadFile("blockChain_genesis.db")
+	content, err := ioutil.ReadFile("blockChain.db_genesis")
 	if err != nil {
 		log.Panic(err)
 	}
@@ -279,7 +279,7 @@ func handleGetStart(request []byte){
 
 }
 
-func handleStoreFirstNode(request []byte, nodeID string){
+func handleStoreFirstNode(request []byte){
 	var buff bytes.Buffer
 	var payload storefile
 
@@ -290,13 +290,13 @@ func handleStoreFirstNode(request []byte, nodeID string){
 	//if err != nil {
 	//	log.Panic(err)
 	//}
-	err = ioutil.WriteFile("blockChain_genesis.db", payload.FileData, 0644)
+	err = ioutil.WriteFile("blockChain.db_genesis", payload.FileData, 0644)
 	if err != nil{
 		panic(err)
 	}
 
-	dbFile := fmt.Sprintf(handel.DbFile, nodeID)
-	err = ioutil.WriteFile(dbFile, payload.FileData, 0644)
+
+	err = ioutil.WriteFile(handel.DbFile, payload.FileData, 0644)
 	if err != nil{
 		panic(err)
 	}

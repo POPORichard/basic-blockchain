@@ -40,12 +40,6 @@ func (cli *CLI) Run() {
 	sendMine := sendCmd.Bool("mine", false, "Mine immediately on the same node")
 	startNodeMiner := startNodeCmd.String("miner", "", "Enable mining mode and send reward to ADDRESS")
 
-	nodeID := os.Getenv("NODE_ID")
-	if nodeID == ""{
-		fmt.Println("NODE_ID env.var is not set!")
-		os.Exit(1)
-	}
-
 	switch os.Args[1] {
 	case "printchain":
 		err := printChainCmd.Parse(os.Args[2:])
@@ -94,7 +88,7 @@ func (cli *CLI) Run() {
 
 	if printChainCmd.Parsed() {
 		fmt.Println("start printChainCmd!")
-		cli.printChain(nodeID)
+		cli.printChain()
 	}
 
 	if getBalanceCmd.Parsed() {
@@ -102,7 +96,7 @@ func (cli *CLI) Run() {
 			getBalanceCmd.Usage()
 			os.Exit(1)
 		}
-		cli.getBalance(*getBalanceAddress, nodeID)
+		cli.getBalance(*getBalanceAddress)
 	}
 
 	if createBlockchainCmd.Parsed() {
@@ -110,7 +104,7 @@ func (cli *CLI) Run() {
 			createBlockchainCmd.Usage()
 			os.Exit(1)
 		}
-		cli.createBlockchain(*createBlockchainAddress, nodeID)
+		cli.createBlockchain(*createBlockchainAddress)
 	}
 
 	if sendCmd.Parsed() {
@@ -119,25 +113,20 @@ func (cli *CLI) Run() {
 			os.Exit(1)
 		}
 
-		cli.send(*sendFrom, *sendTo, *sendAmount, nodeID, *sendMine)
+		cli.send(*sendFrom, *sendTo, *sendAmount, *sendMine)
 	}
 	if createWalletCmd.Parsed() {
-		cli.createWallet(nodeID)
+		cli.createWallet()
 	}
 
 	if listAddressesCmd.Parsed() {
-		cli.listAddresses(nodeID)
+		cli.listAddresses()
 	}
 	if reindexUTXOCmd.Parsed() {
-		cli.reindexUTXO(nodeID)
+		cli.reindexUTXO()
 	}
 	if startNodeCmd.Parsed(){
-		nodeID := os.Getenv("NODE_ID")
-		if nodeID == "" {
-			startNodeCmd.Usage()
-			os.Exit(1)
-		}
-		cli.startNode(nodeID, *startNodeMiner)
+		cli.startNode(*startNodeMiner)
 
 	}
 

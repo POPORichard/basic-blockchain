@@ -9,15 +9,15 @@ import (
 )
 
 //打印区块连
-func (cli *CLI) printChain(nodeID string) {
-	bc := handel.NewBlockchainLink(nodeID)
+func (cli *CLI) printChain() {
+	bc := handel.NewBlockchainLink()
 	defer bc.Db.Close()
 
 	bci := bc.Iterator()
 
 	for {
 		block := bci.Next()
-
+		//TODO:Print tx
 		fmt.Printf("============ Block %x ============\n", block.Hash)
 		fmt.Printf("Height: %d\n", block.Height)
 		fmt.Printf("Prev block: %x\n", block.PrevBlockHash)
