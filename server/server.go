@@ -69,7 +69,9 @@ func handleConnection(conn net.Conn, bc *handel.BlockChain) {
 
 // StartServer starts a node
 func StartServer(nodeID, minerAddress string) {
-	nodeAddress = fmt.Sprintf("localhost:%s", nodeID)
+	printIP()
+	fmt.Println("port is : ",nodeID)
+	nodeAddress = fmt.Sprintf("172.16.10.49:%s", nodeID)
 	miningAddress = minerAddress
 	ln, err := net.Listen(protocol, nodeAddress)
 	if err != nil {
@@ -141,4 +143,19 @@ func nodeIsKnown(addr string) bool {
 	}
 
 	return false
+}
+
+func printIP(){
+	addrs, err := net.InterfaceAddrs()
+	if err != nil{
+		panic(err)
+	}
+	for _,address := range addrs{
+		if ipnet,ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback(){
+			if ipnet.IP.To4() != nil{
+				fmt.Println("IP: ",ipnet.IP.String())
+			}
+		}
+	}
+
 }
